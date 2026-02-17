@@ -6,7 +6,6 @@ stage:
 
 
 build-job:
-
     stage: build
     script:
         - echo "First Step"
