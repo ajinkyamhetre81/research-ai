@@ -4,20 +4,37 @@ stages:
     - deploy
 
 
+before_script:
+    - echo "[global] before script"
+
+after_script:
+    - echo "[global] after script"
 
 build-job:
     stage: build
+    before_script:           #can be used to get some dependencies before building
+        - echo "[local] before build step..."
+    after_script:            #can be used to clean up some space and all after build 
+        - echo "[local] after build step..."
     script:
         - echo "First Step"
         - echo "Second Step"
 
 test-job:
     stage: test
+    before_script:
+        - echo "[local] before test step..."
+    after_script:
+        - echo "[local] after test step..."
     script:
         - echo "Testing Step"
 
 
 deploy-job:
     stage: deploy
+    before_script:
+        - echo "[local] before deploy step..."
+    after_script:
+        - echo "[local] after deploy step..."
     script:
         - echo "Deploy Step"
