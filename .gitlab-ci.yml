@@ -52,7 +52,7 @@ bash_execute:
         - touch newfile
 
     artifacts:
-        path:
+        paths:
             - "./myfolder"
         when: on_success
         access: all
