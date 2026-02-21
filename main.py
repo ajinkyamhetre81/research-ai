@@ -1,6 +1,6 @@
 from fastapi import FastAPI
-from utils.loggers import get_logger, log_with_context, log_operation_start, log_operation_end, log_user_action
-import time
+from routes.website_routes import router as website_router
+from utils.loggers import get_logger
 import routes.main_routes
 import routes.doc_analysis_routes
 # Get a logger for this file
@@ -10,3 +10,4 @@ app = FastAPI()
 
 app.include_router(routes.main_routes.router)
 app.include_router(routes.doc_analysis_routes.router, prefix="/api/v1", tags=["document-analysis"])
+app.include_router(website_router, prefix="/api", tags=["Website Crawler"])

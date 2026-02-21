@@ -6,4 +6,12 @@ python-multipart
 requests
 pytesseract
 Pillow
+streamlit
+playwright
+beautifulsoup4
+aiohttp
+lxml
+selenium
+webdriver-manager
+markdownify
 
