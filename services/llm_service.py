@@ -2,8 +2,10 @@
 
 import os
 import time
+import json
 from typing import Dict, Any, Optional
 from utils.loggers import get_logger, log_operation_start, log_operation_end
+from services.prompt_service import PromptService
 
 try:
     from google import genai
@@ -55,9 +57,10 @@ class LLMService:
         try:
             start_time = time.time()
 
+            prompt = PromptService.create_test_prompt()
             response = self.client.models.generate_content(
                 model=self.model_name,
-                contents="Hello! Please respond with 'API connection successful!'"
+                contents=prompt
             )
 
             processing_time = int((time.time() - start_time) * 1000)
@@ -82,6 +85,79 @@ class LLMService:
             return {
                 "success": False,
                 "error": f"API test failed: {str(e)}"
+            }
+  
+
+
+    def process_faculty_extraction(self, raw_data: str) -> Dict[str, Any]:
+        """Extract faculty information from raw data."""
+        log_operation_start(logger, "Faculty extraction", "Extracting faculty with LLM")
+        
+        if not self.is_available():
+            return {
+                "success": False,
+                "error": "LLM service not available",
+                "processing_type": "faculty_extraction"
+            }
+        
+        try:
+            start_time = time.time()
+            
+            prompt = PromptService.create_college_faculty_extraction_prompt(raw_data)
+            response = self.client.models.generate_content(
+                model=self.model_name,
+                contents=prompt
+            )
+            
+            processing_time = int((time.time() - start_time) * 1000)
+            
+            processed_data = self._parse_llm_response(response.text, "faculty_extraction")
+            
+            log_operation_end(logger, "Faculty extraction", True, f"Completed in {processing_time}ms")
+            
+            return {
+                "success": True,
+                "processing_type": "faculty_extraction",
+                "raw_data": raw_data,
+                "processed_data": processed_data,
+                "processing_time": processing_time,
+                "model": self.model_name,
+                "timestamp": time.time()
+            }
+            
+        except Exception as e:
+            log_operation_end(logger, "Faculty extraction", False, str(e))
+            return {
+                "success": False,
+                "error": f"Faculty extraction failed: {str(e)}",
+                "processing_type": "faculty_extraction"
+            }
+    
+    def _parse_llm_response(self, response_text: str, processing_type: str) -> Dict[str, Any]:
+        """Parse LLM response and handle JSON parsing."""
+        try:
+            # Clean response text - remove markdown code blocks
+            cleaned_text = response_text.strip()
+            
+            # Remove markdown code block markers
+            if cleaned_text.startswith('```json'):
+                cleaned_text = cleaned_text[7:]  # Remove ```json
+            if cleaned_text.startswith('```'):
+                cleaned_text = cleaned_text[3:]   # Remove ```
+            if cleaned_text.endswith('```'):
+                cleaned_text = cleaned_text[:-3]  # Remove ```
+            
+            cleaned_text = cleaned_text.strip()
+            
+            data = json.loads(cleaned_text)
+            logger.info(f"Successfully parsed {processing_type} response")
+            return data
+        except json.JSONDecodeError as e:
+            logger.warning(f"Failed to parse {processing_type} as JSON, returning raw text. Error: {str(e)}")
+            return {
+                "processing_type": processing_type,
+                "raw_response": response_text,
+                "parsing_error": "Failed to parse JSON response"
             }
     
     def get_status(self) -> Dict[str, Any]:
